@@ -164,7 +164,7 @@ public class MainActivity extends AppCompatActivity {
             if (pendingOperation.equals("=")) {
                 pendingOperation = operation;
             }
-            if (operation.equals("%") & pendingOperation.equals("/")) {
+            if (operation.equals("%") && pendingOperation.equals("/")) {
                 pendingOperation = operation;
             }
             switch (pendingOperation) {
