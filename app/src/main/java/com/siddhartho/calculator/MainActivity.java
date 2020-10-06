@@ -1,20 +1,23 @@
 package com.siddhartho.calculator;
 
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity;
+
+import androidx.annotation.NonNull;
+
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.TextView;
+
+import com.siddhartho.calculator.databinding.ActivityMainBinding;
 
 public class MainActivity extends AppCompatActivity {
-    private EditText result;
-    private EditText newNumber;
-    private TextView displayOperation;
+    private static final String TAG = "MainActivity";
 
-    // Variables to hold the operands and type of calculations
+    private ActivityMainBinding binding;
+
     private Double operand1 = null;
-    private String pendingOperation = "=";
+    private String pendingOperation = "";
 
     private static final String STATE_PENDING_OPERATION = "pendingOperation";
     private static final String STATE_OPERAND1 = "operand1";
@@ -22,186 +25,137 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+        Log.d(TAG, "onCreate() called with: savedInstanceState = [" + savedInstanceState + "]");
 
-        result = (EditText) findViewById(R.id.result);
-        newNumber = (EditText) findViewById(R.id.newNumber);
-        displayOperation = (TextView) findViewById(R.id.operation);
+        setNumericOnClickListener();
 
-        Button button0 = (Button) findViewById(R.id.button0);
-        Button button1 = (Button) findViewById(R.id.button1);
-        Button button2 = (Button) findViewById(R.id.button2);
-        Button button3 = (Button) findViewById(R.id.button3);
-        Button button4 = (Button) findViewById(R.id.button4);
-        Button button5 = (Button) findViewById(R.id.button5);
-        Button button6 = (Button) findViewById(R.id.button6);
-        Button button7 = (Button) findViewById(R.id.button7);
-        Button button8 = (Button) findViewById(R.id.button8);
-        Button button9 = (Button) findViewById(R.id.button9);
-        Button buttonDot = (Button) findViewById(R.id.buttonDot);
-        Button buttonNeg = (Button) findViewById(R.id.buttonNeg);
+        setOperationOnClickListener();
 
-        Button buttonEquals = (Button) findViewById(R.id.buttonEquals);
-        Button buttonDivide = (Button) findViewById(R.id.buttonDivide);
-        Button buttonMultiply = (Button) findViewById(R.id.buttonMultiply);
-        Button buttonMinus = (Button) findViewById(R.id.buttonMinus);
-        Button buttonPlus = (Button) findViewById(R.id.buttonPlus);
-        Button buttonPercent = (Button) findViewById(R.id.buttonPercent);
-
-        View.OnClickListener listener = new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Button b = (Button) v;
-                newNumber.append(b.getText().toString());
-            }
-        };
-
-        button0.setOnClickListener(listener);
-        button1.setOnClickListener(listener);
-        button2.setOnClickListener(listener);
-        button3.setOnClickListener(listener);
-        button4.setOnClickListener(listener);
-        button5.setOnClickListener(listener);
-        button6.setOnClickListener(listener);
-        button7.setOnClickListener(listener);
-        button8.setOnClickListener(listener);
-        button9.setOnClickListener(listener);
-        buttonDot.setOnClickListener(listener);
-
-
-        View.OnClickListener opListener = new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Button b = (Button) v;
-                String op = b.getText().toString();
-                String value = newNumber.getText().toString();
-                try {
-                    Double doubleValue = Double.valueOf(value);
-                    performOperation(doubleValue, op);
-                } catch (NumberFormatException e) {
-                    newNumber.setText("");
-                }
-                pendingOperation = op;
-                displayOperation.setText(pendingOperation);
-            }
-        };
-
-        buttonEquals.setOnClickListener(opListener);
-        buttonDivide.setOnClickListener(opListener);
-        buttonMultiply.setOnClickListener(opListener);
-        buttonMinus.setOnClickListener(opListener);
-        buttonPlus.setOnClickListener(opListener);
-        buttonPercent.setOnClickListener(opListener);
-
-        buttonNeg.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String value = newNumber.getText().toString();
-                if (value.length() == 0) {
-                    newNumber.setText("-");
-                } else {
-                    try {
-                        Double doubleValue = Double.valueOf(value);
-                        doubleValue *= -1;
-                        newNumber.setText(doubleValue.toString());
-                    } catch (NumberFormatException e) {
-                        newNumber.setText("");
-                    }
-                }
-            }
-        });
-
-        Button buttonAc = (Button) findViewById(R.id.buttonAc);
-
-        buttonAc.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                newNumber.setText("");
-                result.setText("");
-                displayOperation.setText("");
-                operand1 = null;
-                pendingOperation = null;
-            }
-        });
-
-        Button buttonDel = (Button) findViewById(R.id.buttonDel);
-
-        buttonDel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String value = newNumber.getText().toString();
-                try {
-                    newNumber.setText(value.substring(0, value.length() - 1));
-//                newNumber.setSelection(newNumber.length());
-                } catch (StringIndexOutOfBoundsException e) {
-                    newNumber.setText("");
-                }
-            }
-        });
+        setFunctionOnClickListener();
     }
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
+        Log.d(TAG, "onSaveInstanceState() called with: outState = [" + outState + "]");
         outState.putString(STATE_PENDING_OPERATION, pendingOperation);
-        if (operand1 != null) {
-            outState.putDouble(STATE_OPERAND1, operand1);
-        }
+        if (operand1 != null) outState.putDouble(STATE_OPERAND1, operand1);
         super.onSaveInstanceState(outState);
     }
 
     @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
+        Log.d(TAG, "onRestoreInstanceState() called with: savedInstanceState = [" + savedInstanceState + "]");
         super.onRestoreInstanceState(savedInstanceState);
         pendingOperation = savedInstanceState.getString(STATE_PENDING_OPERATION);
         operand1 = savedInstanceState.getDouble(STATE_OPERAND1);
-        displayOperation.setText(pendingOperation);
+        binding.operation.setText(pendingOperation);
+    }
+
+    private void setNumericOnClickListener() {
+        Log.d(TAG, "setNumericOnClickListener() called");
+        binding.button0.setOnClickListener(getNumericButtonClickListener());
+        binding.button1.setOnClickListener(getNumericButtonClickListener());
+        binding.button2.setOnClickListener(getNumericButtonClickListener());
+        binding.button3.setOnClickListener(getNumericButtonClickListener());
+        binding.button4.setOnClickListener(getNumericButtonClickListener());
+        binding.button5.setOnClickListener(getNumericButtonClickListener());
+        binding.button6.setOnClickListener(getNumericButtonClickListener());
+        binding.button7.setOnClickListener(getNumericButtonClickListener());
+        binding.button8.setOnClickListener(getNumericButtonClickListener());
+        binding.button9.setOnClickListener(getNumericButtonClickListener());
+        binding.buttonDot.setOnClickListener(getNumericButtonClickListener());
+    }
+
+    private void setOperationOnClickListener() {
+        Log.d(TAG, "setOperationOnClickListener() called");
+        binding.buttonEquals.setOnClickListener(getOpListener());
+        binding.buttonDivide.setOnClickListener(getOpListener());
+        binding.buttonMultiply.setOnClickListener(getOpListener());
+        binding.buttonMinus.setOnClickListener(getOpListener());
+        binding.buttonPlus.setOnClickListener(getOpListener());
+        binding.buttonPercent.setOnClickListener(getOpListener());
+    }
+
+    private void setFunctionOnClickListener() {
+        Log.d(TAG, "setFunctionOnClickListener() called");
+        binding.buttonNeg.setOnClickListener(v -> {
+            String value = binding.newNumber.getText().toString();
+            if (value.length() == 0) binding.newNumber.setText("-");
+            else try {
+                double doubleValue = Double.parseDouble(value);
+                doubleValue *= -1;
+                binding.newNumber.setText(String.valueOf(doubleValue));
+            } catch (NumberFormatException e) {
+                binding.newNumber.setText("");
+            }
+        });
+
+        binding.buttonAc.setOnClickListener(v -> {
+            binding.newNumber.setText("");
+            binding.result.setText("");
+            binding.operation.setText("");
+            operand1 = null;
+            pendingOperation = "";
+        });
+
+        binding.buttonDel.setOnClickListener(v -> {
+            String value = binding.newNumber.getText().toString();
+            try {
+                binding.newNumber.setText(value.substring(0, value.length() - 1));
+            } catch (StringIndexOutOfBoundsException e) {
+                binding.newNumber.setText("");
+            }
+        });
+    }
+
+    private View.OnClickListener getNumericButtonClickListener() {
+        Log.d(TAG, "getNumericButtonClickListener() called");
+        return v -> binding.newNumber.append(((Button) v).getText().toString());
+    }
+
+    private View.OnClickListener getOpListener() {
+        Log.d(TAG, "getOpListener() called");
+        return v -> {
+            String op = ((Button) v).getText().toString();
+            String value = binding.newNumber.getText().toString();
+            try {
+                Double doubleValue = Double.valueOf(value);
+                performOperation(doubleValue, op);
+            } catch (NumberFormatException e) {
+                binding.newNumber.setText("");
+            }
+            pendingOperation = op;
+            binding.operation.setText(pendingOperation);
+        };
     }
 
     private void performOperation(Double value, String operation) {
-        if (null == operand1) {
-            operand1 = value;
-        } else {
-            if (pendingOperation.equals("=")) {
+        Log.d(TAG, "performOperation() called with: value = [" + value + "], operation = [" + operation + "]");
+        if (operand1 == null) operand1 = value;
+        else {
+            if (pendingOperation.equals("") || pendingOperation.equals("=") || (operation.equals("%") && pendingOperation.equals("/")))
                 pendingOperation = operation;
-            }
-            if (operation.equals("%") && pendingOperation.equals("/")) {
-                pendingOperation = operation;
-            }
+
             switch (pendingOperation) {
                 case "=":
-                    if (operation.equals("%")) {
-                        operand1 = 0.0;
-                    } else {
-                        operand1 = value;
-                    }
+                    operand1 = value;
                     break;
                 case "/":
-                    if (operation.equals("%")) {
-                        operand1 = 0.0;
-                    } else {
-                        operand1 /= value;
-                    }
+                    operand1 /= value;
                     break;
-                case "*":
-                    if (operation.equals("%")) {
-                        operand1 = 0.0;
-                    } else {
-                        operand1 *= value;
-                    }
+                case "x":
+                    if (operation.equals("%")) operand1 = 0.0;
+                    else operand1 *= value;
                     break;
                 case "+":
-                    if (operation.equals("%")) {
-                        operand1 = 0.0;
-                    } else {
-                        operand1 += value;
-                    }
+                    if (operation.equals("%")) operand1 = 0.0;
+                    else operand1 += value;
                     break;
                 case "-":
-                    if (operation.equals("%")) {
-                        operand1 = 0.0;
-                    } else {
-                        operand1 -= value;
-                    }
+                    if (operation.equals("%")) operand1 = 0.0;
+                    else operand1 -= value;
                     break;
                 case "%":
                     operand1 /= value;
@@ -209,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
                     break;
             }
         }
-        result.setText(operand1.toString());
-        newNumber.setText("");
+        binding.result.setText(String.valueOf(operand1));
+        binding.newNumber.setText("");
     }
 }
