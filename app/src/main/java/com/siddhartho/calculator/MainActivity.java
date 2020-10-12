@@ -17,7 +17,6 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
 
     private Double operand1 = null;
-    private String pendingOperation = "";
 
     private static final String STATE_PENDING_OPERATION = "pendingOperation";
     private static final String STATE_OPERAND1 = "operand1";
@@ -39,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         Log.d(TAG, "onSaveInstanceState() called with: outState = [" + outState + "]");
-        outState.putString(STATE_PENDING_OPERATION, pendingOperation);
+        outState.putString(STATE_PENDING_OPERATION, CalculatorHelper.pendingOperation);
         if (operand1 != null) outState.putDouble(STATE_OPERAND1, operand1);
         super.onSaveInstanceState(outState);
     }
@@ -48,9 +47,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
         Log.d(TAG, "onRestoreInstanceState() called with: savedInstanceState = [" + savedInstanceState + "]");
         super.onRestoreInstanceState(savedInstanceState);
-        pendingOperation = savedInstanceState.getString(STATE_PENDING_OPERATION);
+        CalculatorHelper.pendingOperation = savedInstanceState.getString(STATE_PENDING_OPERATION);
         operand1 = savedInstanceState.getDouble(STATE_OPERAND1);
-        binding.operation.setText(pendingOperation);
+        binding.operation.setText(CalculatorHelper.pendingOperation);
     }
 
     private void setNumericOnClickListener() {
@@ -97,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
             binding.result.setText("");
             binding.operation.setText("");
             operand1 = null;
-            pendingOperation = "";
+            CalculatorHelper.pendingOperation = "";
         });
 
         binding.buttonDel.setOnClickListener(v -> {
@@ -122,47 +121,17 @@ public class MainActivity extends AppCompatActivity {
             String value = binding.newNumber.getText().toString();
             try {
                 Double doubleValue = Double.valueOf(value);
-                performOperation(doubleValue, op);
+                operand1 = CalculatorHelper.performOperation(operand1, doubleValue, op);
+                updateResultToUI();
             } catch (NumberFormatException e) {
                 binding.newNumber.setText("");
             }
-            pendingOperation = op;
-            binding.operation.setText(pendingOperation);
+            CalculatorHelper.pendingOperation = op;
+            binding.operation.setText(CalculatorHelper.pendingOperation);
         };
     }
 
-    private void performOperation(Double value, String operation) {
-        Log.d(TAG, "performOperation() called with: value = [" + value + "], operation = [" + operation + "]");
-        if (operand1 == null) operand1 = value;
-        else {
-            if (pendingOperation.equals("") || pendingOperation.equals("=") || (operation.equals("%") && pendingOperation.equals("/")))
-                pendingOperation = operation;
-
-            switch (pendingOperation) {
-                case "=":
-                    operand1 = value;
-                    break;
-                case "/":
-                    operand1 /= value;
-                    break;
-                case "x":
-                    if (operation.equals("%")) operand1 = 0.0;
-                    else operand1 *= value;
-                    break;
-                case "+":
-                    if (operation.equals("%")) operand1 = 0.0;
-                    else operand1 += value;
-                    break;
-                case "-":
-                    if (operation.equals("%")) operand1 = 0.0;
-                    else operand1 -= value;
-                    break;
-                case "%":
-                    operand1 /= value;
-                    operand1 *= 100;
-                    break;
-            }
-        }
+    private void updateResultToUI() {
         binding.result.setText(String.valueOf(operand1));
         binding.newNumber.setText("");
     }
